@@ -10,6 +10,8 @@ export type DiscoverPlace = {
   city: string;
   priceLevel: number;
   trendingScore: number;
+  /** Distance from the user in km, when user coordinates and place coordinates are both known. */
+  distanceKm: number | null;
   moods: { key: string; label: string; emoji: string | null }[];
 };
 
@@ -31,12 +33,40 @@ export type DiscoverFeed = {
   events: DiscoverEvent[];
 };
 
-// Simple v1 ranking: trending_score + recency. Distance is intentionally omitted —
-// we don't yet collect user geolocation/place coordinates on the client (see roadmap).
-function placeScore(trendingScore: number, updatedAt: Date, now: number): number {
+export type Coordinates = { lat: number; lng: number };
+
+const EARTH_RADIUS_KM = 6371;
+
+/** Great-circle distance between two points in km (haversine formula). */
+export function haversineKm(a: Coordinates, b: Coordinates): number {
+  const toRad = (deg: number) => (deg * Math.PI) / 180;
+  const dLat = toRad(b.lat - a.lat);
+  const dLng = toRad(b.lng - a.lng);
+  const h =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat)) * Math.sin(dLng / 2) ** 2;
+  return 2 * EARTH_RADIUS_KM * Math.asin(Math.sqrt(h));
+}
+
+// Nearby places get up to +25 on top of trending (comparable scale to trendingScore 0–100).
+// The boost fades to zero at 10 km so other coastal towns still rank on their own merits.
+function proximityBoost(distanceKm: number | null): number {
+  if (distanceKm === null) return 0;
+  return Math.max(0, 25 - 2.5 * distanceKm);
+}
+
+// Ranking: trending_score + recency + proximity (when the user shares their location
+// and the place has coordinates). Events use trending + starts-soon only — venues
+// don't carry coordinates yet (see roadmap).
+function placeScore(
+  trendingScore: number,
+  updatedAt: Date,
+  now: number,
+  distanceKm: number | null,
+): number {
   const daysSinceUpdate = (now - updatedAt.getTime()) / 86_400_000;
   const recencyBoost = Math.max(0, 10 - daysSinceUpdate);
-  return trendingScore + recencyBoost;
+  return trendingScore + recencyBoost + proximityBoost(distanceKm);
 }
 
 function eventScore(trendingScore: number, startsAt: Date, now: number): number {
@@ -45,11 +75,20 @@ function eventScore(trendingScore: number, startsAt: Date, now: number): number 
   return trendingScore + soonBoost;
 }
 
-export function rankPlaces<T extends { trendingScore: number; updatedAt: Date }>(
-  items: T[],
-  now: number = Date.now(),
-): T[] {
-  return [...items].sort((a, b) => placeScore(b.trendingScore, b.updatedAt, now) - placeScore(a.trendingScore, a.updatedAt, now));
+export function placeDistanceKm(
+  place: { lat: number | null; lng: number | null },
+  user: Coordinates | null,
+): number | null {
+  if (!user || place.lat === null || place.lng === null) return null;
+  return haversineKm(user, { lat: place.lat, lng: place.lng });
+}
+
+export function rankPlaces<
+  T extends { trendingScore: number; updatedAt: Date; lat: number | null; lng: number | null },
+>(items: T[], userCoords: Coordinates | null = null, now: number = Date.now()): T[] {
+  const score = (item: T) =>
+    placeScore(item.trendingScore, item.updatedAt, now, placeDistanceKm(item, userCoords));
+  return [...items].sort((a, b) => score(b) - score(a));
 }
 
 export function rankEvents<T extends { trendingScore: number; startsAt: Date }>(
@@ -59,11 +98,22 @@ export function rankEvents<T extends { trendingScore: number; startsAt: Date }>(
   return [...items].sort((a, b) => eventScore(b.trendingScore, b.startsAt, now) - eventScore(a.trendingScore, a.startsAt, now));
 }
 
+/** Parses raw lat/lng query values into validated coordinates, or null if absent/invalid. */
+export function parseCoords(latRaw: unknown, lngRaw: unknown): Coordinates | null {
+  if (typeof latRaw !== "string" || typeof lngRaw !== "string") return null;
+  const lat = Number(latRaw);
+  const lng = Number(lngRaw);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return null;
+  return { lat, lng };
+}
+
 export async function getDiscoverFeed(params: {
   mood?: MoodType | null;
   location?: string | null;
+  userCoords?: Coordinates | null;
 }): Promise<DiscoverFeed> {
-  const { mood, location } = params;
+  const { mood, location, userCoords = null } = params;
 
   const places = await prisma.place.findMany({
     where: {
@@ -86,17 +136,21 @@ export async function getDiscoverFeed(params: {
   });
 
   return {
-    places: rankPlaces(places).map((p) => ({
-      id: p.id,
-      name: p.name,
-      category: p.category,
-      description: p.description,
-      imageUrl: p.imageUrl,
-      city: p.city,
-      priceLevel: p.priceLevel,
-      trendingScore: p.trendingScore,
-      moods: p.moods.map((m) => ({ key: m.key, label: m.label, emoji: m.emoji })),
-    })),
+    places: rankPlaces(places, userCoords).map((p) => {
+      const distanceKm = placeDistanceKm(p, userCoords);
+      return {
+        id: p.id,
+        name: p.name,
+        category: p.category,
+        description: p.description,
+        imageUrl: p.imageUrl,
+        city: p.city,
+        priceLevel: p.priceLevel,
+        trendingScore: p.trendingScore,
+        distanceKm: distanceKm === null ? null : Math.round(distanceKm * 10) / 10,
+        moods: p.moods.map((m) => ({ key: m.key, label: m.label, emoji: m.emoji })),
+      };
+    }),
     events: rankEvents(events).map((e) => ({
       id: e.id,
       slug: e.slug,

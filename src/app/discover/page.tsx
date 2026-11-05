@@ -2,8 +2,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { Navbar } from "@/components/site/Navbar";
 import { Footer } from "@/components/site/Footer";
+import { NearMeButton } from "@/components/discover/NearMeButton";
 import { auth } from "@/lib/auth";
-import { getDiscoverFeed } from "@/lib/discover";
+import { getDiscoverFeed, parseCoords } from "@/lib/discover";
 import { MOODS, type MoodType } from "@/lib/moods";
 import { formatEventDate, formatPrice } from "@/lib/format";
 import { track } from "@/lib/analytics";
@@ -17,16 +18,30 @@ const CATEGORY_LABEL: Record<string, string> = {
 };
 
 export default async function DiscoverPage({ searchParams }: PageProps<"/discover">) {
-  const { mood: moodParam, location } = await searchParams;
+  const { mood: moodParam, location, lat, lng } = await searchParams;
   const mood = typeof moodParam === "string" && MOODS.some((m) => m.key === moodParam) ? (moodParam as MoodType) : null;
   const locationFilter = typeof location === "string" ? location : null;
+  const userCoords = parseCoords(lat, lng);
 
   const session = await auth();
   if (mood) {
     void track("mood_selected", { mood, location: locationFilter }, session?.user?.id);
   }
 
-  const { places, events } = await getDiscoverFeed({ mood, location: locationFilter });
+  const { places, events } = await getDiscoverFeed({ mood, location: locationFilter, userCoords });
+
+  // Mood filter links keep the user's location so "Near me" survives mood switching.
+  const moodHref = (moodKey: string | null) => {
+    const params = new URLSearchParams();
+    if (moodKey) params.set("mood", moodKey);
+    if (typeof location === "string") params.set("location", location);
+    if (userCoords) {
+      params.set("lat", String(userCoords.lat));
+      params.set("lng", String(userCoords.lng));
+    }
+    const query = params.toString();
+    return query ? `/discover?${query}` : "/discover";
+  };
 
   const placesByCategory = places.reduce<Record<string, typeof places>>((acc, place) => {
     (acc[place.category] ??= []).push(place);
@@ -46,9 +61,9 @@ export default async function DiscoverPage({ searchParams }: PageProps<"/discove
         </section>
 
         <section className="mx-auto max-w-6xl px-6 pb-6">
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Link
-              href="/discover"
+              href={moodHref(null)}
               className={`rounded-full border px-4 py-1.5 text-sm font-medium transition-colors ${
                 !mood
                   ? "border-accent bg-accent text-background"
@@ -60,7 +75,7 @@ export default async function DiscoverPage({ searchParams }: PageProps<"/discove
             {MOODS.map((m) => (
               <Link
                 key={m.key}
-                href={`/discover?mood=${m.key}`}
+                href={moodHref(m.key)}
                 className={`rounded-full border px-4 py-1.5 text-sm font-medium transition-colors ${
                   mood === m.key
                     ? "border-accent bg-accent text-background"
@@ -70,6 +85,7 @@ export default async function DiscoverPage({ searchParams }: PageProps<"/discove
                 {m.emoji} {m.label}
               </Link>
             ))}
+            <NearMeButton />
           </div>
         </section>
 
@@ -126,7 +142,10 @@ export default async function DiscoverPage({ searchParams }: PageProps<"/discove
                     <h3 className="font-semibold">{place.name}</h3>
                     <span className="text-xs text-muted">{"$".repeat(place.priceLevel)}</span>
                   </div>
-                  <p className="mt-1 text-xs text-muted">{place.city}</p>
+                  <p className="mt-1 text-xs text-muted">
+                    {place.city}
+                    {place.distanceKm !== null && ` · ${place.distanceKm} km away`}
+                  </p>
                   {place.description && <p className="mt-2 text-sm text-muted">{place.description}</p>}
                   <div className="mt-3 flex flex-wrap gap-1.5">
                     {place.moods.map((m) => (
