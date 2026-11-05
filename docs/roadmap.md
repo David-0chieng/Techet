@@ -24,18 +24,18 @@ Status legend: ✅ shipped · 🔨 in progress · 📋 planned
 - ✅ Artist profiles, category browsing, and booking requests (`/artists`)
 - ✅ User profile page
 - ✅ Lightweight analytics tracking via audit log
+- ✅ Geolocation-based discovery ranking for places: opt-in "Near me" button, proximity boost, distance badges
 
 ## Milestone 3 — Hardening & engagement 📋
 
 Priorities for the next phase, roughly in order:
 
-1. 📋 **Geolocation-based discovery ranking** — collect user location and place coordinates;
-   add distance to the discover ranking (currently trending + recency only, see `src/lib/discover.ts`)
-2. 📋 **Notifications** — email/SMS confirmations for orders, booking requests, and crew-plan invites
-3. 📋 **Artist booking payments** — connect accepted bookings to the M-Pesa checkout flow with deposits
-4. 📋 **Test suite** — unit tests for `src/lib/` ranking, planning, and payout logic; integration tests for checkout
-5. 📋 **Middleware → proxy migration** — `src/middleware.ts` uses the deprecated Next.js convention
+1. 📋 **Notifications** — email/SMS confirmations for orders, booking requests, and crew-plan invites
+2. 📋 **Artist booking payments** — connect accepted bookings to the M-Pesa checkout flow with deposits
+3. 📋 **Test suite** — unit tests for `src/lib/` ranking, planning, and payout logic; integration tests for checkout
+4. 📋 **Middleware → proxy migration** — `src/middleware.ts` uses the deprecated Next.js convention
    (`npx @next/codemod@canary middleware-to-proxy .`)
+5. 📋 **Venue coordinates** — add lat/lng to venues so events can join the distance-aware ranking
 
 ## Milestone 4 — Growth 📋
 

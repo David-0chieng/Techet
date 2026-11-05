@@ -13,6 +13,7 @@ The format is based on Keep a Changelog, and this project follows a simple versi
 - Vibe map and sunset index surfaces
 - Artist profiles, category browsing, and artist booking requests
 - User profile page and lightweight analytics tracking via audit log
+- Geolocation-based discovery ranking: opt-in "Near me" button, proximity boost for nearby places, distance badges
 - Initial project direction for Techet
 - Focused README with MVP scope
 - Core product goals and development rules
