@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { EVENT_CATEGORIES } from "@/lib/categories";
-import { toLocalInput } from "@/lib/format";
 
 export type EventFormTicketType = {
   id?: string;
@@ -214,7 +213,7 @@ export function EventForm({
           className="rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent"
         />
         <span className="text-xs text-muted">
-          If tickets are sold elsewhere (e.g. another platform), add the link here — Techet will
+          If tickets are sold elsewhere (e.g. another platform), add the link here — VibeNasi will
           list the event for discovery and send buyers there instead of its own checkout.
         </span>
       </label>

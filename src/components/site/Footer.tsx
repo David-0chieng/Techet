@@ -32,7 +32,7 @@ export function Footer() {
       <div className="mx-auto max-w-6xl px-6 py-12">
         <div className="grid grid-cols-2 gap-8 sm:grid-cols-4">
           <div className="col-span-2 sm:col-span-1">
-            <span className="font-mono text-lg font-bold tracking-tight">TECHET</span>
+            <span className="font-mono text-lg font-bold tracking-tight">VIBENASI</span>
             <p className="mt-2 max-w-xs text-sm text-muted">
               Tickets, payments, check-in — sorted. Built fast, built fair, built for how Kenya turns up.
             </p>
@@ -54,7 +54,7 @@ export function Footer() {
         </div>
 
         <div className="mt-10 border-t border-border pt-6 text-xs text-muted">
-          &copy; {new Date().getFullYear()} Techet. All rights reserved.
+          &copy; {new Date().getFullYear()} VibeNasi. All rights reserved.
         </div>
       </div>
     </footer>

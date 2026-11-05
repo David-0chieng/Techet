@@ -4,17 +4,22 @@ import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { signIn } from "next-auth/react";
+import { ARTIST_CATEGORIES, ARTIST_CATEGORY_LABEL } from "@/lib/artists";
 
 function RegisterForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const asOrganizer = searchParams.get("role") === "organizer";
+  const role = searchParams.get("role");
+  const asOrganizer = role === "organizer";
+  const asArtist = role === "artist";
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [bio, setBio] = useState("");
+  const [category, setCategory] = useState(ARTIST_CATEGORIES[0]);
+  const [city, setCity] = useState("Mombasa");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -23,12 +28,16 @@ function RegisterForm() {
     setError(null);
     setLoading(true);
 
+    const body = asOrganizer
+      ? { intent: "organizer", name, email, password, displayName, bio }
+      : asArtist
+        ? { intent: "artist", name, email, password, displayName, bio, category, city }
+        : { intent: "customer", name, email, password };
+
     const res = await fetch("/api/auth/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(
-        asOrganizer ? { name, email, password, displayName, bio } : { name, email, password },
-      ),
+      body: JSON.stringify(body),
     });
 
     const data = await res.json();
@@ -47,7 +56,7 @@ function RegisterForm() {
       return;
     }
 
-    router.push(asOrganizer ? "/dashboard" : "/");
+    router.push(asOrganizer ? "/dashboard" : asArtist ? "/dashboard/artist" : "/");
     router.refresh();
   }
 
@@ -55,12 +64,14 @@ function RegisterForm() {
     <main className="flex flex-1 items-center justify-center px-6 py-24">
       <div className="w-full max-w-sm rounded-2xl border border-border bg-surface p-8">
         <h1 className="text-2xl font-bold tracking-tight">
-          {asOrganizer ? "Create your organizer account" : "Create your account"}
+          {asOrganizer ? "Create your organizer account" : asArtist ? "Create your artist profile" : "Create your account"}
         </h1>
         <p className="mt-2 text-sm text-muted">
           {asOrganizer
             ? "Set up your organizer profile and start dropping events."
-            : "Sawa, let's get you in — book tickets in seconds."}
+            : asArtist
+              ? "List your rate card and start taking booking requests."
+              : "Sawa, let's get you in — book tickets in seconds."}
         </p>
 
         <form onSubmit={handleSubmit} className="mt-8 flex flex-col gap-4">
@@ -105,7 +116,7 @@ function RegisterForm() {
                   required
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
-                  placeholder="e.g. Techet Collective"
+                  placeholder="e.g. VibeNasi Collective"
                   className="rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent"
                 />
               </label>
@@ -115,6 +126,54 @@ function RegisterForm() {
                   value={bio}
                   onChange={(e) => setBio(e.target.value)}
                   rows={3}
+                  className="rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent"
+                />
+              </label>
+            </>
+          )}
+
+          {asArtist && (
+            <>
+              <label className="flex flex-col gap-1.5 text-sm">
+                Artist / stage name
+                <input
+                  required
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  placeholder="e.g. DJ Pwani"
+                  className="rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent"
+                />
+              </label>
+              <label className="flex flex-col gap-1.5 text-sm">
+                Category
+                <select
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value as typeof category)}
+                  className="rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent"
+                >
+                  {ARTIST_CATEGORIES.map((c) => (
+                    <option key={c} value={c}>
+                      {ARTIST_CATEGORY_LABEL[c]}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="flex flex-col gap-1.5 text-sm">
+                City
+                <input
+                  required
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                  className="rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent"
+                />
+              </label>
+              <label className="flex flex-col gap-1.5 text-sm">
+                Short bio (optional)
+                <textarea
+                  value={bio}
+                  onChange={(e) => setBio(e.target.value)}
+                  rows={3}
+                  placeholder="Rate card, style, availability…"
                   className="rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent"
                 />
               </label>
@@ -138,11 +197,15 @@ function RegisterForm() {
             Log in
           </Link>
         </p>
-        {!asOrganizer && (
+        {!asOrganizer && !asArtist && (
           <p className="mt-2 text-sm text-muted">
             Hosting an event?{" "}
             <Link href="/register?role=organizer" className="text-foreground underline underline-offset-4">
               Sign up as an organizer
+            </Link>
+            {" "}·{" "}
+            <Link href="/register?role=artist" className="text-foreground underline underline-offset-4">
+              Sign up as an artist
             </Link>
           </p>
         )}

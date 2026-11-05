@@ -15,7 +15,56 @@ datasource db {
 enum Role {
   CUSTOMER
   ORGANIZER
+  ARTIST
   ADMIN
+}
+
+enum PlaceCategory {
+  FOOD
+  ACTIVITY
+  VIEWPOINT
+  NIGHTLIFE
+  OTHER
+}
+
+enum TransportMode {
+  CAR
+  MATATU
+  UBER
+  WALK
+}
+
+enum PlanStatus {
+  DRAFT
+  FINAL
+}
+
+enum VoteOption {
+  A
+  B
+  C
+}
+
+enum ArtistCategory {
+  DJ
+  MC
+  PHOTOGRAPHER
+  DANCER
+  BAND
+  OTHER
+}
+
+enum BookingStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  CANCELLED
+}
+
+enum VibeSignalType {
+  CHECKIN
+  SAVE
+  COMMENT
 }
 
 enum EventStatus {
@@ -52,18 +101,25 @@ enum TicketStatus {
 }
 
 model User {
-  id           String    @id @default(cuid())
+  id           String   @id @default(cuid())
   name         String
-  email        String    @unique
+  email        String   @unique
   passwordHash String
-  role         Role      @default(CUSTOMER)
+  role         Role     @default(CUSTOMER)
   phone        String?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-  organizer  Organizer?
-  orders     Order[]
-  auditLogs  AuditLog[]
+  organizer Organizer?
+  orders    Order[]
+  auditLogs AuditLog[]
+
+  artistProfile   ArtistProfile?
+  itineraries     Itinerary[]
+  crewMemberships CrewMember[]
+  votes           Vote[]
+  costSplits      CostSplit[]
+  bookingRequests BookingRequest[]
 }
 
 // One-to-one profile for users who publish events
@@ -101,26 +157,30 @@ model Venue {
 }
 
 model Event {
-  id          String      @id @default(cuid())
-  organizerId String
-  organizer   Organizer   @relation(fields: [organizerId], references: [id])
-  venueId     String?
-  venue       Venue?      @relation(fields: [venueId], references: [id])
-  title       String
-  slug        String      @unique
-  description String
-  category    String
-  imageUrl    String?
-  // When set, tickets are sold on a third-party platform; Techet only lists the event for discovery.
-  externalUrl String?
-  startsAt    DateTime
-  endsAt      DateTime
-  status      EventStatus @default(DRAFT)
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  id            String      @id @default(cuid())
+  organizerId   String
+  organizer     Organizer   @relation(fields: [organizerId], references: [id])
+  venueId       String?
+  venue         Venue?      @relation(fields: [venueId], references: [id])
+  title         String
+  slug          String      @unique
+  description   String
+  category      String
+  imageUrl      String?
+  // When set, tickets are sold on a third-party platform; VibeNasi only lists the event for discovery.
+  externalUrl   String?
+  startsAt      DateTime
+  endsAt        DateTime
+  status        EventStatus @default(DRAFT)
+  trendingScore Float       @default(0)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
 
-  ticketTypes TicketType[]
-  orders      Order[]
+  ticketTypes    TicketType[]
+  orders         Order[]
+  moods          Mood[]          @relation("EventMoods")
+  vibeSignals    VibeSignal[]
+  itineraryItems ItineraryItem[]
 
   @@index([status, startsAt])
 }
@@ -169,19 +229,19 @@ model OrderItem {
 }
 
 model Payment {
-  id            String          @id @default(cuid())
-  orderId       String
-  order         Order           @relation(fields: [orderId], references: [id])
-  provider      PaymentProvider
-  status        PaymentStatus   @default(PENDING)
-  amount        Decimal         @db.Decimal(10, 2)
-  providerRef   String?
+  id                String          @id @default(cuid())
+  orderId           String
+  order             Order           @relation(fields: [orderId], references: [id])
+  provider          PaymentProvider
+  status            PaymentStatus   @default(PENDING)
+  amount            Decimal         @db.Decimal(10, 2)
+  providerRef       String?
   phone             String?
-  checkoutRequestId String?     @unique
+  checkoutRequestId String?         @unique
   mpesaReceipt      String?
   failureReason     String?
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
 
   refunds Refund[]
 }
@@ -208,13 +268,13 @@ model Ticket {
 }
 
 model PromoCode {
-  id             String   @id @default(cuid())
-  code           String   @unique
+  id             String    @id @default(cuid())
+  code           String    @unique
   discountPct    Int
   maxRedemptions Int?
-  redeemedCount  Int      @default(0)
+  redeemedCount  Int       @default(0)
   expiresAt      DateTime?
-  createdAt      DateTime @default(now())
+  createdAt      DateTime  @default(now())
 
   orders Order[]
 }
@@ -228,4 +288,199 @@ model AuditLog {
   entityId  String?
   metadata  Json?
   createdAt DateTime @default(now())
+}
+
+// --- VibeNasi: discovery, planning, map & artist-booking domain ---
+
+model Mood {
+  id        String   @id @default(cuid())
+  key       String   @unique // "chill" | "turn_up" | "romantic" | "budget"
+  label     String
+  emoji     String?
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  places Place[] @relation("PlaceMoods")
+  events Event[] @relation("EventMoods")
+}
+
+model Place {
+  id            String        @id @default(cuid())
+  name          String
+  category      PlaceCategory
+  description   String?
+  imageUrl      String?
+  city          String
+  lat           Float?
+  lng           Float?
+  priceLevel    Int           @default(1) // 1 ($) – 4 ($$$$)
+  trendingScore Float         @default(0)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  moods          Mood[]          @relation("PlaceMoods")
+  itineraryItems ItineraryItem[]
+  vibeSignals    VibeSignal[]
+  sunsetSpot     SunsetSpot?
+
+  @@index([city, category])
+}
+
+model Itinerary {
+  id        String        @id @default(cuid())
+  userId    String
+  user      User          @relation(fields: [userId], references: [id])
+  title     String
+  location  String
+  budgetMin Int
+  budgetMax Int
+  mood      String
+  groupSize Int
+  transport TransportMode
+  totalCost Decimal       @default(0) @db.Decimal(10, 2)
+  shareSlug String        @unique
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  items    ItineraryItem[]
+  crewPlan CrewPlan?
+
+  @@index([userId])
+}
+
+model ItineraryItem {
+  id          String    @id @default(cuid())
+  itineraryId String
+  itinerary   Itinerary @relation(fields: [itineraryId], references: [id])
+  day         Int // 1 or 2
+  block       String // "morning" | "afternoon" | "night"
+  placeId     String?
+  place       Place?    @relation(fields: [placeId], references: [id])
+  eventId     String?
+  event       Event?    @relation(fields: [eventId], references: [id])
+  title       String
+  estCost     Decimal   @default(0) @db.Decimal(10, 2)
+  sortOrder   Int       @default(0)
+
+  @@index([itineraryId])
+}
+
+model CrewPlan {
+  id          String     @id @default(cuid())
+  itineraryId String     @unique
+  itinerary   Itinerary  @relation(fields: [itineraryId], references: [id])
+  status      PlanStatus @default(DRAFT)
+  inviteCode  String     @unique
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  members   CrewMember[]
+  votes     Vote[]
+  splits    CostSplit[]
+  checklist ChecklistItem[]
+}
+
+model CrewMember {
+  id         String   @id @default(cuid())
+  crewPlanId String
+  crewPlan   CrewPlan @relation(fields: [crewPlanId], references: [id])
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  joinedAt   DateTime @default(now())
+
+  @@unique([crewPlanId, userId])
+}
+
+model Vote {
+  id         String     @id @default(cuid())
+  crewPlanId String
+  crewPlan   CrewPlan   @relation(fields: [crewPlanId], references: [id])
+  userId     String
+  user       User       @relation(fields: [userId], references: [id])
+  option     VoteOption
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  @@unique([crewPlanId, userId])
+}
+
+model CostSplit {
+  id         String   @id @default(cuid())
+  crewPlanId String
+  crewPlan   CrewPlan @relation(fields: [crewPlanId], references: [id])
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  amount     Decimal  @db.Decimal(10, 2)
+  paid       Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  @@unique([crewPlanId, userId])
+}
+
+model ChecklistItem {
+  id         String   @id @default(cuid())
+  crewPlanId String
+  crewPlan   CrewPlan @relation(fields: [crewPlanId], references: [id])
+  label      String
+  done       Boolean  @default(false)
+  createdAt  DateTime @default(now())
+}
+
+model VibeSignal {
+  id        String         @id @default(cuid())
+  placeId   String?
+  place     Place?         @relation(fields: [placeId], references: [id])
+  eventId   String?
+  event     Event?         @relation(fields: [eventId], references: [id])
+  type      VibeSignalType
+  createdAt DateTime       @default(now())
+
+  @@index([placeId, createdAt])
+  @@index([eventId, createdAt])
+}
+
+model SunsetSpot {
+  id         String   @id @default(cuid())
+  placeId    String   @unique
+  place      Place    @relation(fields: [placeId], references: [id])
+  bestWindow String // e.g. "6:15 PM – 6:45 PM"
+  cloudHint  String?
+  photoScore Float    @default(0)
+  date       DateTime @db.Date
+  createdAt  DateTime @default(now())
+
+  @@unique([placeId, date])
+}
+
+model ArtistProfile {
+  id          String         @id @default(cuid())
+  userId      String         @unique
+  user        User           @relation(fields: [userId], references: [id])
+  displayName String
+  category    ArtistCategory
+  city        String
+  bio         String?
+  rateCard    String?
+  available   Boolean        @default(true)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  bookingRequests BookingRequest[]
+}
+
+model BookingRequest {
+  id          String        @id @default(cuid())
+  artistId    String
+  artist      ArtistProfile @relation(fields: [artistId], references: [id])
+  requesterId String
+  requester   User          @relation(fields: [requesterId], references: [id])
+  eventDate   DateTime
+  eventType   String
+  budget      Decimal       @db.Decimal(10, 2)
+  notes       String?
+  status      BookingStatus @default(PENDING)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([artistId, status])
 }

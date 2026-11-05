@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
-import { registerSchema, organizerRegisterSchema } from "@/lib/validation/auth";
+import { registerSchema, organizerRegisterSchema, artistRegisterSchema } from "@/lib/validation/auth";
+import type { ArtistCategoryType } from "@/lib/artists";
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
-  const asOrganizer = typeof body?.displayName === "string";
+  const intent = body?.intent;
 
-  if (asOrganizer) {
+  if (intent === "organizer") {
     const parsed = organizerRegisterSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json(
@@ -16,6 +17,17 @@ export async function POST(request: Request) {
       );
     }
     return createUser({ ...parsed.data, role: "ORGANIZER" });
+  }
+
+  if (intent === "artist") {
+    const parsed = artistRegisterSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: parsed.error.issues[0]?.message ?? "Invalid input" },
+        { status: 400 },
+      );
+    }
+    return createUser({ ...parsed.data, role: "ARTIST" });
   }
 
   const parsed = registerSchema.safeParse(body);
@@ -32,9 +44,11 @@ async function createUser(input: {
   name: string;
   email: string;
   password: string;
-  role: "CUSTOMER" | "ORGANIZER";
+  role: "CUSTOMER" | "ORGANIZER" | "ARTIST";
   displayName?: string;
   bio?: string;
+  category?: ArtistCategoryType;
+  city?: string;
 }) {
   try {
     const existing = await prisma.user.findUnique({ where: { email: input.email } });
@@ -52,6 +66,18 @@ async function createUser(input: {
         role: input.role,
         ...(input.role === "ORGANIZER"
           ? { organizer: { create: { displayName: input.displayName!, bio: input.bio } } }
+          : {}),
+        ...(input.role === "ARTIST"
+          ? {
+              artistProfile: {
+                create: {
+                  displayName: input.displayName!,
+                  category: input.category!,
+                  city: input.city!,
+                  bio: input.bio,
+                },
+              },
+            }
           : {}),
       },
       select: { id: true, name: true, email: true, role: true },

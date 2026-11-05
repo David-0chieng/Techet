@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 type Result = { kind: "success" | "error"; message: string; detail?: string };
 
@@ -10,22 +10,19 @@ type BarcodeDetectorLike = {
 };
 type BarcodeDetectorCtor = new (options: { formats: string[] }) => BarcodeDetectorLike;
 
+// Camera support never changes during a page's lifetime, so subscribe is a no-op;
+// the server snapshot is false because the APIs are browser-only.
+const emptySubscribe = () => () => {};
+const getCameraSupport = () => "BarcodeDetector" in window && !!navigator.mediaDevices?.getUserMedia;
+
 export function CheckinScanner() {
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<Result | null>(null);
-  const [cameraSupported, setCameraSupported] = useState(false);
+  const cameraSupported = useSyncExternalStore(emptySubscribe, getCameraSupport, () => false);
   const [cameraOn, setCameraOn] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
-
-  useEffect(() => {
-    setCameraSupported(
-      typeof window !== "undefined" &&
-        "BarcodeDetector" in window &&
-        !!navigator.mediaDevices?.getUserMedia,
-    );
-  }, []);
 
   useEffect(() => {
     if (!cameraOn) return;

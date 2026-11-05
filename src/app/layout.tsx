@@ -13,9 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Techet — Event Ticketing, Built for Speed",
+  title: "VibeNasi — Discover, Plan, and Book the Coast",
   description:
-    "Discover events, book tickets, and get paid faster. Techet is a modern ticketing platform for organizers and attendees.",
+    "VibeNasi is the Gen Z app for Kenya's coast: discover vibes by mood, plan your weekend with your crew, catch the best sunset, and book artists — all in one place.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

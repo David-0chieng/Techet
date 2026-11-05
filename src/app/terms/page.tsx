@@ -12,13 +12,13 @@ export default function TermsPage() {
 
           <div className="mt-8 flex flex-col gap-6 text-sm leading-relaxed text-muted">
             <p>
-              By creating an account or purchasing a ticket on Techet, you agree to these terms. Please
+              By creating an account or purchasing a ticket on VibeNasi, you agree to these terms. Please
               read them carefully.
             </p>
             <div>
               <h2 className="text-base font-semibold text-foreground">1. Tickets and orders</h2>
               <p className="mt-2">
-                Tickets are issued by the organizer of each event. Techet processes payment and issues
+                Tickets are issued by the organizer of each event. VibeNasi processes payment and issues
                 a digital ticket on the organizer&apos;s behalf once payment is confirmed. Each ticket
                 is valid for a single entry and is void once checked in.
               </p>
@@ -34,7 +34,7 @@ export default function TermsPage() {
               <h2 className="text-base font-semibold text-foreground">3. Refunds and cancellations</h2>
               <p className="mt-2">
                 Refund eligibility is set by the event organizer. If an event is cancelled by the
-                organizer, Techet will work with the organizer to process refunds to affected
+                organizer, VibeNasi will work with the organizer to process refunds to affected
                 attendees.
               </p>
             </div>
@@ -48,7 +48,7 @@ export default function TermsPage() {
             <div>
               <h2 className="text-base font-semibold text-foreground">5. Changes</h2>
               <p className="mt-2">
-                We may update these terms from time to time. Continued use of Techet after a change
+                We may update these terms from time to time. Continued use of VibeNasi after a change
                 means you accept the updated terms.
               </p>
             </div>

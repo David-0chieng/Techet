@@ -32,7 +32,7 @@ export default function OrganizersPage() {
           </h1>
           <p className="mt-4 text-lg text-muted">
             Ticketing, payments, check-in, payouts — sorted, so you can focus on throwing something
-            people actually remember. No spreadsheets, no "send proof of payment" DMs.
+            people actually remember. No spreadsheets, no &quot;send proof of payment&quot; DMs.
           </p>
           <Link
             href="/register?role=organizer"

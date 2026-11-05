@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { ARTIST_CATEGORIES } from "@/lib/artists";
 
 export const registerSchema = z.object({
   name: z.string().trim().min(2, "Name must be at least 2 characters").max(100),
@@ -14,6 +15,13 @@ export const organizerRegisterSchema = registerSchema.extend({
   bio: z.string().trim().max(500).optional(),
 });
 
+export const artistRegisterSchema = registerSchema.extend({
+  displayName: z.string().trim().min(2, "Artist/stage name must be at least 2 characters").max(100),
+  category: z.enum(ARTIST_CATEGORIES, { message: "Choose a category" }),
+  city: z.string().trim().min(1, "City is required").max(100),
+  bio: z.string().trim().max(500).optional(),
+});
+
 export const loginSchema = z.object({
   email: z.string().trim().toLowerCase().email("Enter a valid email address"),
   password: z.string().min(1, "Password is required"),
@@ -21,4 +29,5 @@ export const loginSchema = z.object({
 
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type OrganizerRegisterInput = z.infer<typeof organizerRegisterSchema>;
+export type ArtistRegisterInput = z.infer<typeof artistRegisterSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;

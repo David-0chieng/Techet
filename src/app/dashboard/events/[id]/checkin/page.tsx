@@ -30,7 +30,7 @@ export default async function CheckinPage({ params }: { params: Promise<{ id: st
         </Link>
         <h1 className="mt-4 text-2xl font-bold">Check in · {event.title}</h1>
         <p className="mt-1 text-sm text-muted">
-          Scan a ticket's QR code or paste its code to mark it used at the door.
+          Scan a ticket&apos;s QR code or paste its code to mark it used at the door.
         </p>
         <div className="mt-8">
           <CheckinScanner />

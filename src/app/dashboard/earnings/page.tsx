@@ -25,7 +25,7 @@ export default async function OrganizerEarningsPage() {
         </Link>
         <h1 className="mt-4 text-2xl font-bold">Earnings</h1>
         <p className="mt-1 text-sm text-muted">
-          Platform fee: {PLATFORM_FEE_PCT}%. Payouts are sent manually by the Techet team via
+          Platform fee: {PLATFORM_FEE_PCT}%. Payouts are sent manually by the VibeNasi team via
           M-Pesa.
         </p>
 

@@ -10,15 +10,20 @@ export default auth((req) => {
   const role = req.auth?.user?.role;
 
   const isAdminRoute = pathname.startsWith("/admin");
-  const isOrganizerRoute = pathname.startsWith("/dashboard");
+  const isArtistRoute = pathname.startsWith("/dashboard/artist");
+  const isOrganizerRoute = pathname.startsWith("/dashboard") && !isArtistRoute;
 
-  if ((isAdminRoute || isOrganizerRoute) && !req.auth) {
+  if ((isAdminRoute || isOrganizerRoute || isArtistRoute) && !req.auth) {
     const loginUrl = new URL("/login", req.nextUrl.origin);
     loginUrl.searchParams.set("callbackUrl", pathname);
     return NextResponse.redirect(loginUrl);
   }
 
   if (isAdminRoute && role !== "ADMIN") {
+    return NextResponse.redirect(new URL("/", req.nextUrl.origin));
+  }
+
+  if (isArtistRoute && role !== "ARTIST" && role !== "ADMIN") {
     return NextResponse.redirect(new URL("/", req.nextUrl.origin));
   }
 

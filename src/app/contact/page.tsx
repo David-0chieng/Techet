@@ -16,14 +16,14 @@ export default function ContactPage() {
           <div className="mt-8 flex flex-col gap-4">
             <div className="rounded-xl border border-border bg-surface p-5">
               <h2 className="text-sm font-semibold">General support</h2>
-              <a href="mailto:support@techet.app" className="mt-1 block text-sm text-accent">
-                support@techet.app
+              <a href="mailto:support@vibenasi.app" className="mt-1 block text-sm text-accent">
+                support@vibenasi.app
               </a>
             </div>
             <div className="rounded-xl border border-border bg-surface p-5">
               <h2 className="text-sm font-semibold">Organizer sales</h2>
-              <a href="mailto:organizers@techet.app" className="mt-1 block text-sm text-accent">
-                organizers@techet.app
+              <a href="mailto:organizers@vibenasi.app" className="mt-1 block text-sm text-accent">
+                organizers@vibenasi.app
               </a>
             </div>
           </div>

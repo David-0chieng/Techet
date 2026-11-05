@@ -2,9 +2,10 @@ import Link from "next/link";
 import { auth, signOut } from "@/lib/auth";
 
 const links = [
-  { href: "/events", label: "Events" },
-  { href: "/register?role=organizer", label: "For Organizers" },
-  { href: "/about", label: "About" },
+  { href: "/", label: "Home" },
+  { href: "/discover", label: "Discover" },
+  { href: "/plan", label: "Plan" },
+  { href: "/map", label: "Map" },
 ];
 
 export async function Navbar() {
@@ -17,7 +18,7 @@ export async function Navbar() {
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
         <Link href="/" className="flex items-center gap-2 font-mono text-lg font-bold tracking-tight">
           <span className="inline-block h-2 w-2 rounded-full bg-accent" />
-          TECHET
+          VIBENASI
         </Link>
 
         <nav className="hidden items-center gap-8 text-sm text-muted md:flex">
@@ -48,10 +49,10 @@ export async function Navbar() {
                 </Link>
               )}
               <Link
-                href="/bookings"
+                href="/profile"
                 className="hidden text-sm text-muted transition-colors hover:text-foreground sm:inline"
               >
-                My bookings
+                Profile
               </Link>
               <form
                 action={async () => {

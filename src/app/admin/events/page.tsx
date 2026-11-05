@@ -42,7 +42,7 @@ export default async function AdminEventsPage() {
       <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-12">
         <h1 className="text-2xl font-bold">Event moderation</h1>
         <p className="mt-2 text-sm text-muted">
-          Approve drafts to make them visible on the site, or manage any event's visibility.
+          Approve drafts to make them visible on the site, or manage any event&apos;s visibility.
         </p>
 
         <h2 className="mt-10 text-sm font-semibold uppercase tracking-wide text-muted">

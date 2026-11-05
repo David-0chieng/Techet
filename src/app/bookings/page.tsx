@@ -21,7 +21,7 @@ export default async function BookingsPage() {
       <Navbar />
       <main className="mx-auto w-full max-w-3xl flex-1 px-6 py-12">
         <h1 className="text-2xl font-bold tracking-tight">My bookings</h1>
-        <p className="mt-2 text-sm text-muted">Every order and ticket you&apos;ve copped on Techet.</p>
+        <p className="mt-2 text-sm text-muted">Every order and ticket you&apos;ve copped on VibeNasi.</p>
 
         {orders.length === 0 ? (
           <div className="mt-8 rounded-2xl border border-border bg-surface p-8 text-center">

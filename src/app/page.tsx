@@ -43,7 +43,7 @@ export default function Home() {
           </h1>
           <p className="mt-6 max-w-xl text-lg text-muted">
             Gigs, raves, pop-ups, day parties — if it&apos;s worth leaving the house for, it&apos;s on
-            Techet. Hosting one? We handle ticketing, payments, check-in, and the numbers so you can
+            VibeNasi. Hosting one? We handle ticketing, payments, check-in, and the numbers so you can
             focus on the vibe.
           </p>
           <div className="mt-8 flex flex-wrap gap-4">
@@ -76,7 +76,7 @@ export default function Home() {
         </section>
 
         <section className="mx-auto max-w-6xl px-6 py-20">
-          <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">Why organizers ride with Techet</h2>
+          <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">Why organizers ride with VibeNasi</h2>
           <div className="mt-10 grid gap-6 sm:grid-cols-2">
             {features.map((feature) => (
               <div key={feature.title} className="rounded-2xl border border-border bg-surface p-6">

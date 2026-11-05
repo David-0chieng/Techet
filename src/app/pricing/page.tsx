@@ -11,7 +11,7 @@ export default function PricingPage() {
         <section className="mx-auto max-w-3xl px-6 pt-20 pb-12 text-center">
           <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Pricing that doesn&apos;t play games</h1>
           <p className="mt-4 text-lg text-muted">
-            No setup fees, no monthly subscription, no "call us for a quote." We only get paid when
+            No setup fees, no monthly subscription, no &quot;call us for a quote.&quot; We only get paid when
             your tickets sell.
           </p>
         </section>

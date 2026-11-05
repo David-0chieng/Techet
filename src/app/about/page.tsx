@@ -26,7 +26,7 @@ export default function AboutPage() {
             We&apos;re just here for the <span className="bg-gradient-to-r from-accent to-accent-2 bg-clip-text text-transparent">plans</span>.
           </h1>
           <p className="mt-4 text-lg text-muted">
-            Techet started with one annoying problem: finding out what&apos;s actually happening this
+            VibeNasi started with one annoying problem: finding out what&apos;s actually happening this
             weekend shouldn&apos;t mean five WhatsApp groups and a blurry poster on someone&apos;s
             story. So we built one place — gigs, raves, pop-ups, wellness mornings, tech meetups — where
             you can see what&apos;s on, cop a ticket in seconds, and show up knowing it&apos;s legit.

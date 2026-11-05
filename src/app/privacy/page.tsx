@@ -12,7 +12,7 @@ export default function PrivacyPage() {
 
           <div className="mt-8 flex flex-col gap-6 text-sm leading-relaxed text-muted">
             <p>
-              This policy explains what information Techet collects and how we use it when you book
+              This policy explains what information VibeNasi collects and how we use it when you book
               tickets or run events on our platform.
             </p>
             <div>
@@ -42,7 +42,7 @@ export default function PrivacyPage() {
               <h2 className="text-base font-semibold text-foreground">Your choices</h2>
               <p className="mt-2">
                 You can request a copy of your data or ask us to delete your account by contacting
-                support@techet.app.
+                support@vibenasi.app.
               </p>
             </div>
           </div>

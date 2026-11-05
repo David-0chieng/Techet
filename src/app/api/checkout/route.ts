@@ -100,7 +100,7 @@ export async function POST(request: Request) {
       phone,
       amount: order.totalAmount,
       reference: order.id.slice(-8),
-      description: "Techet",
+      description: "VibeNasi",
     });
     await prisma.payment.updateMany({
       where: { orderId: order.id },
