@@ -7,6 +7,7 @@ The format is based on Keep a Changelog, and this project follows a simple versi
 ## [Unreleased]
 
 ### Added
+- Email notifications via Resend: order confirmations, artist booking request created/accepted/declined/cancelled, and crew-plan join alerts. No-op console log in development when `RESEND_API_KEY` is unset.
 - Vibenasi pivot: mood-based discovery feed for places and events
 - Weekend planner that generates a 2-day itinerary from location, budget, mood, group size, and transport
 - Crew plans with voting, checklists, cost splitting, and join-by-code

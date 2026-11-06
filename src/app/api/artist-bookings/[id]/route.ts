@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { sendBookingStatusEmail } from "@/lib/notifications";
 
 const statusSchema = z.object({
   status: z.enum(["ACCEPTED", "DECLINED", "CANCELLED"]),
@@ -35,6 +36,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     where: { id },
     data: { status: parsed.data.status },
   });
+
+  void sendBookingStatusEmail(updated.id);
 
   return NextResponse.json({ booking: { id: updated.id, status: updated.status } });
 }

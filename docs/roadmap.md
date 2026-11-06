@@ -30,11 +30,10 @@ Status legend: ✅ shipped · 🔨 in progress · 📋 planned
 
 Priorities for the next phase, roughly in order:
 
-1. 📋 **Notifications** — email/SMS confirmations for orders, booking requests, and crew-plan invites
+1. ✅ **Notifications** — email confirmations for orders, artist booking requests, and crew-plan joins (via Resend; logs to console in dev when unconfigured)
 2. 📋 **Artist booking payments** — connect accepted bookings to the M-Pesa checkout flow with deposits
 3. 📋 **Test suite** — unit tests for `src/lib/` ranking, planning, and payout logic; integration tests for checkout
-4. 📋 **Middleware → proxy migration** — `src/middleware.ts` uses the deprecated Next.js convention
-   (`npx @next/codemod@canary middleware-to-proxy .`)
+4. ✅ **Middleware → proxy migration** — renamed `src/middleware.ts` to `src/proxy.ts` per the Next.js 16 convention
 5. 📋 **Venue coordinates** — add lat/lng to venues so events can join the distance-aware ranking
 
 ## Milestone 4 — Growth 📋

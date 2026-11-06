@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { randomBytes, timingSafeEqual } from "node:crypto";
 import { prisma } from "@/lib/prisma";
+import { sendOrderConfirmationEmail } from "@/lib/notifications";
 
 type CallbackItem = { Name: string; Value?: string | number };
 
@@ -99,6 +100,8 @@ export async function POST(request: Request) {
       ),
     });
   });
+
+  void sendOrderConfirmationEmail(order.id);
 
   return ack();
 }

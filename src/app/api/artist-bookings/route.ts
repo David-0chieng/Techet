@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { bookingRequestSchema } from "@/lib/validation/booking";
 import { track } from "@/lib/analytics";
+import { sendBookingRequestCreatedEmail } from "@/lib/notifications";
 
 export async function POST(request: Request) {
   const session = await auth();
@@ -38,6 +39,7 @@ export async function POST(request: Request) {
     { artistId: artist.id, bookingId: booking.id },
     session.user.id,
   );
+  void sendBookingRequestCreatedEmail(booking.id);
 
   return NextResponse.json({ booking: { id: booking.id } }, { status: 201 });
 }
