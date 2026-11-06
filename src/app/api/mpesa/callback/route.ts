@@ -1,18 +1,20 @@
 import { NextResponse } from "next/server";
 import { randomBytes, timingSafeEqual } from "node:crypto";
 import { prisma } from "@/lib/prisma";
-import { sendOrderConfirmationEmail } from "@/lib/notifications";
+import { sendOrderConfirmationEmail, sendBookingDepositPaidEmail } from "@/lib/notifications";
 
 type CallbackItem = { Name: string; Value?: string | number };
 
+type StkCallbackPayload = {
+  CheckoutRequestID?: string;
+  ResultCode?: number;
+  ResultDesc?: string;
+  CallbackMetadata?: { Item?: CallbackItem[] };
+};
+
 type StkCallback = {
   Body?: {
-    stkCallback?: {
-      CheckoutRequestID?: string;
-      ResultCode?: number;
-      ResultDesc?: string;
-      CallbackMetadata?: { Item?: CallbackItem[] };
-    };
+    stkCallback?: StkCallbackPayload;
   };
 };
 
@@ -40,8 +42,10 @@ export async function POST(request: Request) {
     where: { checkoutRequestId: callback.CheckoutRequestID },
     include: { order: { include: { items: true } } },
   });
-  // Unknown or already-processed callbacks are acknowledged and ignored (idempotent).
-  if (!payment || payment.status !== "PENDING") return ack();
+  // Ticket payments and booking deposits share the STK callback; try deposits next.
+  if (!payment) return handleBookingDeposit(callback);
+  // Already-processed callbacks are acknowledged and ignored (idempotent).
+  if (payment.status !== "PENDING") return ack();
 
   const { order } = payment;
 
@@ -102,6 +106,51 @@ export async function POST(request: Request) {
   });
 
   void sendOrderConfirmationEmail(order.id);
+
+  return ack();
+}
+
+// Settles a booking deposit payment. Mirrors the ticket flow: claim the PENDING row
+// first so duplicate callbacks are idempotent, then confirm the booking on success.
+async function handleBookingDeposit(callback: StkCallbackPayload) {
+  const payment = await prisma.bookingPayment.findUnique({
+    where: { checkoutRequestId: callback.CheckoutRequestID },
+  });
+  // Unknown or already-processed callbacks are acknowledged and ignored (idempotent).
+  if (!payment || payment.status !== "PENDING") return ack();
+
+  if (callback.ResultCode !== 0) {
+    await prisma.bookingPayment.updateMany({
+      where: { id: payment.id, status: "PENDING" },
+      data: { status: "FAILED", failureReason: callback.ResultDesc ?? "Payment failed" },
+    });
+    return ack();
+  }
+
+  const items = callback.CallbackMetadata?.Item ?? [];
+  const find = (name: string) => items.find((i) => i.Name === name)?.Value;
+  const receipt = String(find("MpesaReceiptNumber") ?? "");
+  const paidAmount = Number(find("Amount") ?? 0);
+  const amountOk = paidAmount >= Number(payment.amount);
+
+  await prisma.$transaction(async (tx) => {
+    const claimed = await tx.bookingPayment.updateMany({
+      where: { id: payment.id, status: "PENDING" },
+      data: {
+        status: amountOk ? "SUCCEEDED" : "FAILED",
+        mpesaReceipt: receipt || null,
+        failureReason: amountOk ? null : `Amount mismatch: paid ${paidAmount}`,
+      },
+    });
+    if (claimed.count === 0 || !amountOk) return;
+
+    await tx.bookingRequest.updateMany({
+      where: { id: payment.bookingId, status: "ACCEPTED" },
+      data: { status: "CONFIRMED" },
+    });
+  });
+
+  if (amountOk) void sendBookingDepositPaidEmail(payment.bookingId);
 
   return ack();
 }

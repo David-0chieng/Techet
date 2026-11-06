@@ -54,10 +54,20 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   }
 
   await prisma.$transaction(async (tx) => {
+    // Both coordinates or neither — a lone lat/lng is meaningless for distance ranking.
+    const hasCoords = data.venueLat != null && data.venueLng != null;
+    const venueData = {
+      name: data.venueName,
+      address: data.venueAddress,
+      city: data.venueCity,
+      lat: hasCoords ? data.venueLat : null,
+      lng: hasCoords ? data.venueLng : null,
+    };
+
     if (event.venueId) {
       await tx.venue.update({
         where: { id: event.venueId },
-        data: { name: data.venueName, address: data.venueAddress, city: data.venueCity },
+        data: venueData,
       });
     }
 
@@ -74,7 +84,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
           ? {}
           : {
               venue: {
-                create: { name: data.venueName, address: data.venueAddress, city: data.venueCity },
+                create: venueData,
               },
             }),
       },

@@ -31,37 +31,43 @@ async function main() {
 
   const ngongRacecourse = await prisma.venue.upsert({
     where: { id: "seed-venue-ngong-racecourse" },
-    update: {},
+    update: { lat: -1.3048, lng: 36.744 },
     create: {
       id: "seed-venue-ngong-racecourse",
       name: "Ngong Racecourse",
       address: "Ngong Road",
       city: "Nairobi",
       country: "Kenya",
+      lat: -1.3048,
+      lng: 36.744,
     },
   });
 
   const theAlchemist = await prisma.venue.upsert({
     where: { id: "seed-venue-the-alchemist" },
-    update: {},
+    update: { lat: -1.2645, lng: 36.8023 },
     create: {
       id: "seed-venue-the-alchemist",
       name: "The Alchemist Bar",
       address: "Westlands",
       city: "Nairobi",
       country: "Kenya",
+      lat: -1.2645,
+      lng: 36.8023,
     },
   });
 
   const sarit = await prisma.venue.upsert({
     where: { id: "seed-venue-sarit-expo" },
-    update: {},
+    update: { lat: -1.2607, lng: 36.8025 },
     create: {
       id: "seed-venue-sarit-expo",
       name: "Sarit Expo Centre",
       address: "Westlands",
       city: "Nairobi",
       country: "Kenya",
+      lat: -1.2607,
+      lng: 36.8025,
     },
   });
 

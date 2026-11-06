@@ -19,6 +19,8 @@ export type EventFormValues = {
   venueName: string;
   venueAddress: string;
   venueCity: string;
+  venueLat: string; // optional decimal degrees, kept as string for the input
+  venueLng: string;
   startsAt: string; // datetime-local value
   endsAt: string;
   externalUrl: string;
@@ -32,6 +34,8 @@ export const emptyEventForm: EventFormValues = {
   venueName: "",
   venueAddress: "",
   venueCity: "Nairobi",
+  venueLat: "",
+  venueLng: "",
   startsAt: "",
   endsAt: "",
   externalUrl: "",
@@ -88,6 +92,8 @@ export function EventForm({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...values,
+          venueLat: values.venueLat.trim() === "" ? null : Number(values.venueLat),
+          venueLng: values.venueLng.trim() === "" ? null : Number(values.venueLng),
           startsAt: new Date(values.startsAt).toISOString(),
           endsAt: new Date(values.endsAt).toISOString(),
           ticketTypes: values.ticketTypes.map((t) => ({
@@ -178,6 +184,38 @@ export function EventForm({
             className="rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent"
           />
         </label>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <label className="flex flex-col gap-1.5 text-sm">
+          Latitude (optional)
+          <input
+            type="number"
+            step="any"
+            min={-90}
+            max={90}
+            placeholder="-4.0435"
+            value={values.venueLat}
+            onChange={(e) => update("venueLat", e.target.value)}
+            className="rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent"
+          />
+        </label>
+        <label className="flex flex-col gap-1.5 text-sm">
+          Longitude (optional)
+          <input
+            type="number"
+            step="any"
+            min={-180}
+            max={180}
+            placeholder="39.6682"
+            value={values.venueLng}
+            onChange={(e) => update("venueLng", e.target.value)}
+            className="rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent"
+          />
+        </label>
+        <p className="text-xs text-muted sm:col-span-2 -mt-2">
+          Add coordinates so your event ranks higher for people nearby in Discover.
+        </p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">

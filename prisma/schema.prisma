@@ -57,6 +57,7 @@ enum ArtistCategory {
 enum BookingStatus {
   PENDING
   ACCEPTED
+  CONFIRMED // deposit paid
   DECLINED
   CANCELLED
 }
@@ -151,6 +152,8 @@ model Venue {
   address   String
   city      String
   country   String   @default("Kenya")
+  lat       Float?
+  lng       Float?
   createdAt DateTime @default(now())
 
   events Event[]
@@ -482,5 +485,27 @@ model BookingRequest {
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
 
+  payments BookingPayment[]
+
   @@index([artistId, status])
+}
+
+// M-Pesa deposit collected from the requester once the artist accepts a booking.
+model BookingPayment {
+  id                String          @id @default(cuid())
+  bookingId         String
+  booking           BookingRequest  @relation(fields: [bookingId], references: [id])
+  provider          PaymentProvider @default(MPESA)
+  status            PaymentStatus   @default(PENDING)
+  amount            Decimal         @db.Decimal(10, 2)
+  platformFee       Decimal         @db.Decimal(10, 2)
+  phone             String?
+  providerRef       String?
+  checkoutRequestId String?         @unique
+  mpesaReceipt      String?
+  failureReason     String?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  @@index([bookingId])
 }

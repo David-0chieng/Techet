@@ -120,6 +120,7 @@ export default async function DiscoverPage({ searchParams }: PageProps<"/discove
                     {event.venueName && (
                       <p className="mt-1 text-sm text-muted">
                         {event.venueName}, {event.venueCity}
+                        {event.distanceKm !== null && ` · ${event.distanceKm} km away`}
                       </p>
                     )}
                     <div className="mt-2 text-sm font-semibold text-accent-2">

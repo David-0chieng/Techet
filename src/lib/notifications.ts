@@ -98,6 +98,10 @@ export async function sendBookingStatusEmail(bookingId: string): Promise<void> {
     // requester's own action so we notify the artist instead.
     const recipient = booking.status === "CANCELLED" ? booking.artist.user : booking.requester;
     const verb = booking.status.toLowerCase();
+    const depositCta =
+      booking.status === "ACCEPTED"
+        ? `<p>Lock it in by paying the deposit from <a href="${process.env.APP_URL ?? ""}/bookings">your bookings page</a>.</p>`
+        : "";
 
     await sendEmail({
       to: recipient.email,
@@ -105,10 +109,53 @@ export async function sendBookingStatusEmail(bookingId: string): Promise<void> {
       html: layout(`Booking request ${verb}`, `
         <p>The booking request for a <strong>${booking.eventType}</strong> on
         ${formatEventDate(booking.eventDate)} was ${verb}.</p>
+        ${depositCta}
       `),
     });
   } catch (err) {
     console.error("sendBookingStatusEmail failed", err);
+  }
+}
+
+// Notifies both sides once the M-Pesa deposit lands and the booking is confirmed.
+export async function sendBookingDepositPaidEmail(bookingId: string): Promise<void> {
+  try {
+    const booking = await prisma.bookingRequest.findUnique({
+      where: { id: bookingId },
+      include: {
+        artist: { include: { user: true } },
+        requester: true,
+        payments: { where: { status: "SUCCEEDED" }, orderBy: { updatedAt: "desc" }, take: 1 },
+      },
+    });
+    const payment = booking?.payments[0];
+    if (!booking || !payment) return;
+
+    const when = formatEventDate(booking.eventDate);
+    const artistNet = Number(payment.amount) - Number(payment.platformFee);
+
+    await Promise.all([
+      sendEmail({
+        to: booking.requester.email,
+        subject: "Booking confirmed — deposit received",
+        html: layout("Booking confirmed ✅", `
+          <p>Your deposit of <strong>${formatPrice(String(payment.amount))}</strong> for
+          <strong>${booking.artist.displayName}</strong> (${booking.eventType}, ${when}) is in.</p>
+          <p>The artist will reach out to finalise the details.</p>
+        `),
+      }),
+      sendEmail({
+        to: booking.artist.user.email,
+        subject: `Deposit paid — ${booking.requester.name} confirmed the booking`,
+        html: layout("Deposit received 💰", `
+          <p>${booking.requester.name} paid the deposit for the <strong>${booking.eventType}</strong>
+          on ${when}.</p>
+          <p>Your share after the platform fee: <strong>${formatPrice(String(artistNet))}</strong>.</p>
+        `),
+      }),
+    ]);
+  } catch (err) {
+    console.error("sendBookingDepositPaidEmail failed", err);
   }
 }
 

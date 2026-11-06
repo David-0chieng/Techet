@@ -2,19 +2,28 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Navbar } from "@/components/site/Navbar";
 import { Footer } from "@/components/site/Footer";
+import { BookingDepositCard } from "@/components/artist/BookingDepositCard";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { computeBookingDeposit } from "@/lib/bookings";
 import { formatPrice, formatEventDate } from "@/lib/format";
 
 export default async function BookingsPage() {
   const session = await auth();
   if (!session?.user?.id) redirect("/login?callbackUrl=%2Fbookings");
 
-  const orders = await prisma.order.findMany({
-    where: { userId: session.user.id },
-    orderBy: { createdAt: "desc" },
-    include: { event: { select: { title: true, slug: true, startsAt: true } } },
-  });
+  const [orders, artistBookings] = await Promise.all([
+    prisma.order.findMany({
+      where: { userId: session.user.id },
+      orderBy: { createdAt: "desc" },
+      include: { event: { select: { title: true, slug: true, startsAt: true } } },
+    }),
+    prisma.bookingRequest.findMany({
+      where: { requesterId: session.user.id },
+      orderBy: { createdAt: "desc" },
+      include: { artist: { select: { displayName: true, category: true, city: true } } },
+    }),
+  ]);
 
   return (
     <>
@@ -51,6 +60,44 @@ export default async function BookingsPage() {
               </li>
             ))}
           </ul>
+        )}
+
+        {artistBookings.length > 0 && (
+          <section className="mt-12">
+            <h2 className="text-xl font-bold tracking-tight">Artist bookings</h2>
+            <p className="mt-1 text-sm text-muted">
+              Your booking requests to DJs, MCs, photographers, and more.
+            </p>
+            <ul className="mt-5 flex flex-col gap-3">
+              {artistBookings.map((b) => (
+                <li key={b.id} className="rounded-xl border border-border bg-surface p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <div className="font-semibold">{b.artist.displayName}</div>
+                      <div className="mt-1 text-xs text-muted">
+                        {b.eventType} · {formatEventDate(b.eventDate)} ·{" "}
+                        {formatPrice(String(b.budget))} budget
+                      </div>
+                    </div>
+                    <span className="rounded-full border border-border px-3 py-1 text-xs font-medium text-muted">
+                      {b.status === "CONFIRMED" ? "CONFIRMED ✓" : b.status}
+                    </span>
+                  </div>
+                  {b.status === "ACCEPTED" && (
+                    <BookingDepositCard
+                      bookingId={b.id}
+                      depositAmount={computeBookingDeposit(Number(b.budget)).deposit}
+                    />
+                  )}
+                  {b.status === "CONFIRMED" && (
+                    <p className="mt-2 text-sm text-accent">
+                      Deposit paid — the artist will reach out to finalise details.
+                    </p>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </section>
         )}
       </main>
       <Footer />

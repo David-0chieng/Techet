@@ -15,6 +15,8 @@ export const eventInputSchema = z.object({
   venueName: z.string().trim().min(1, "Venue name is required").max(140),
   venueAddress: z.string().trim().min(1, "Venue address is required").max(200),
   venueCity: z.string().trim().min(1, "City is required").max(100),
+  venueLat: z.number().min(-90, "Latitude must be between -90 and 90").max(90, "Latitude must be between -90 and 90").nullable().optional(),
+  venueLng: z.number().min(-180, "Longitude must be between -180 and 180").max(180, "Longitude must be between -180 and 180").nullable().optional(),
   startsAt: z.string().refine((v) => !Number.isNaN(Date.parse(v)), "Invalid start date"),
   endsAt: z.string().refine((v) => !Number.isNaN(Date.parse(v)), "Invalid end date"),
   externalUrl: z

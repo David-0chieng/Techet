@@ -113,6 +113,8 @@ export default async function EditEventPage({ params }: { params: Promise<{ id: 
               venueName: event.venue?.name ?? "",
               venueAddress: event.venue?.address ?? "",
               venueCity: event.venue?.city ?? "",
+              venueLat: event.venue?.lat != null ? String(event.venue.lat) : "",
+              venueLng: event.venue?.lng != null ? String(event.venue.lng) : "",
               startsAt: toLocalInput(event.startsAt),
               endsAt: toLocalInput(event.endsAt),
               externalUrl: event.externalUrl ?? "",

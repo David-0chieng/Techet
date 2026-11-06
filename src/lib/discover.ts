@@ -26,6 +26,8 @@ export type DiscoverEvent = {
   venueCity: string | null;
   fromPrice: number | null;
   trendingScore: number;
+  /** Distance from the user in km, when user and venue coordinates are both known. */
+  distanceKm: number | null;
 };
 
 export type DiscoverFeed = {
@@ -56,8 +58,7 @@ function proximityBoost(distanceKm: number | null): number {
 }
 
 // Ranking: trending_score + recency + proximity (when the user shares their location
-// and the place has coordinates). Events use trending + starts-soon only — venues
-// don't carry coordinates yet (see roadmap).
+// and the place/venue has coordinates).
 function placeScore(
   trendingScore: number,
   updatedAt: Date,
@@ -69,10 +70,15 @@ function placeScore(
   return trendingScore + recencyBoost + proximityBoost(distanceKm);
 }
 
-function eventScore(trendingScore: number, startsAt: Date, now: number): number {
+function eventScore(
+  trendingScore: number,
+  startsAt: Date,
+  now: number,
+  distanceKm: number | null = null,
+): number {
   const daysUntil = (startsAt.getTime() - now) / 86_400_000;
   const soonBoost = daysUntil >= 0 ? Math.max(0, 10 - daysUntil) : 0;
-  return trendingScore + soonBoost;
+  return trendingScore + soonBoost + proximityBoost(distanceKm);
 }
 
 export function placeDistanceKm(
@@ -91,11 +97,17 @@ export function rankPlaces<
   return [...items].sort((a, b) => score(b) - score(a));
 }
 
-export function rankEvents<T extends { trendingScore: number; startsAt: Date }>(
-  items: T[],
-  now: number = Date.now(),
-): T[] {
-  return [...items].sort((a, b) => eventScore(b.trendingScore, b.startsAt, now) - eventScore(a.trendingScore, a.startsAt, now));
+export function rankEvents<
+  T extends { trendingScore: number; startsAt: Date; lat?: number | null; lng?: number | null },
+>(items: T[], userCoords: Coordinates | null = null, now: number = Date.now()): T[] {
+  const score = (item: T) =>
+    eventScore(
+      item.trendingScore,
+      item.startsAt,
+      now,
+      placeDistanceKm({ lat: item.lat ?? null, lng: item.lng ?? null }, userCoords),
+    );
+  return [...items].sort((a, b) => score(b) - score(a));
 }
 
 /** Parses raw lat/lng query values into validated coordinates, or null if absent/invalid. */
@@ -130,10 +142,16 @@ export async function getDiscoverFeed(params: {
       ...(location ? { venue: { city: { equals: location, mode: "insensitive" } } } : {}),
     },
     include: {
-      venue: { select: { name: true, city: true } },
+      venue: { select: { name: true, city: true, lat: true, lng: true } },
       ticketTypes: { orderBy: { price: "asc" }, take: 1, select: { price: true } },
     },
   });
+
+  // Hoist venue coordinates so events can join the same distance-aware ranking as places.
+  const rankedEvents = rankEvents(
+    events.map((e) => ({ ...e, lat: e.venue?.lat ?? null, lng: e.venue?.lng ?? null })),
+    userCoords,
+  );
 
   return {
     places: rankPlaces(places, userCoords).map((p) => {
@@ -151,17 +169,21 @@ export async function getDiscoverFeed(params: {
         moods: p.moods.map((m) => ({ key: m.key, label: m.label, emoji: m.emoji })),
       };
     }),
-    events: rankEvents(events).map((e) => ({
-      id: e.id,
-      slug: e.slug,
-      title: e.title,
-      category: e.category,
-      imageUrl: e.imageUrl,
-      startsAt: e.startsAt,
-      venueName: e.venue?.name ?? null,
-      venueCity: e.venue?.city ?? null,
-      fromPrice: e.ticketTypes[0] ? Number(e.ticketTypes[0].price) : null,
-      trendingScore: e.trendingScore,
-    })),
+    events: rankedEvents.map((e) => {
+      const distanceKm = placeDistanceKm(e, userCoords);
+      return {
+        id: e.id,
+        slug: e.slug,
+        title: e.title,
+        category: e.category,
+        imageUrl: e.imageUrl,
+        startsAt: e.startsAt,
+        venueName: e.venue?.name ?? null,
+        venueCity: e.venue?.city ?? null,
+        fromPrice: e.ticketTypes[0] ? Number(e.ticketTypes[0].price) : null,
+        trendingScore: e.trendingScore,
+        distanceKm: distanceKm === null ? null : Math.round(distanceKm * 10) / 10,
+      };
+    }),
   };
 }

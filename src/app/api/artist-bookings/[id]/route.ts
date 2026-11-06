@@ -31,6 +31,13 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (parsed.data.status !== "CANCELLED" && !isArtistOwner) {
     return NextResponse.json({ error: "Only the artist can respond to this request." }, { status: 403 });
   }
+  // A paid (confirmed) booking can't be changed here — refunds aren't self-serve.
+  if (booking.status === "CONFIRMED") {
+    return NextResponse.json(
+      { error: "This booking is confirmed with a paid deposit. Contact support to change it." },
+      { status: 409 },
+    );
+  }
 
   const updated = await prisma.bookingRequest.update({
     where: { id },

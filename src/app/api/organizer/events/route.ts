@@ -26,6 +26,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Start time can't be in the past." }, { status: 400 });
   }
 
+  // Both coordinates or neither — a lone lat/lng is meaningless for distance ranking.
+  const hasCoords = data.venueLat != null && data.venueLng != null;
+  const venueData = {
+    name: data.venueName,
+    address: data.venueAddress,
+    city: data.venueCity,
+    lat: hasCoords ? data.venueLat : null,
+    lng: hasCoords ? data.venueLng : null,
+  };
+
   const baseSlug = slugify(data.title) || "event";
   let slug = baseSlug;
   for (let i = 1; await prisma.event.findUnique({ where: { slug } }); i++) {
@@ -44,7 +54,7 @@ export async function POST(request: Request) {
       endsAt,
       externalUrl: data.externalUrl || null,
       venue: {
-        create: { name: data.venueName, address: data.venueAddress, city: data.venueCity },
+        create: venueData,
       },
       ticketTypes: {
         create: data.ticketTypes.map((t) => ({ name: t.name, price: t.price, quantity: t.quantity })),

@@ -26,20 +26,20 @@ Status legend: ✅ shipped · 🔨 in progress · 📋 planned
 - ✅ Lightweight analytics tracking via audit log
 - ✅ Geolocation-based discovery ranking for places: opt-in "Near me" button, proximity boost, distance badges
 
-## Milestone 3 — Hardening & engagement 📋
-
-Priorities for the next phase, roughly in order:
+## Milestone 3 — Hardening & engagement ✅
 
 1. ✅ **Notifications** — email confirmations for orders, artist booking requests, and crew-plan joins (via Resend; logs to console in dev when unconfigured)
-2. 📋 **Artist booking payments** — connect accepted bookings to the M-Pesa checkout flow with deposits
-3. 📋 **Test suite** — unit tests for `src/lib/` ranking, planning, and payout logic; integration tests for checkout
+2. ✅ **Artist booking payments** — accepted bookings collect an M-Pesa deposit (`BOOKING_DEPOSIT_PCT`, default 30% of budget) with the platform keeping `PLATFORM_FEE_PCT`; deposit confirms the booking
+3. ✅ **Test suite** — Vitest unit tests for ranking, planning, and deposit logic; integration tests for checkout, the M-Pesa callback, and booking deposits (`npm test`)
 4. ✅ **Middleware → proxy migration** — renamed `src/middleware.ts` to `src/proxy.ts` per the Next.js 16 convention
-5. 📋 **Venue coordinates** — add lat/lng to venues so events can join the distance-aware ranking
+5. ✅ **Venue coordinates** — venues carry optional lat/lng so events join the distance-aware ranking with distance badges
 
-## Milestone 4 — Growth 📋
+## Milestone 4 — Go-live & growth 📋
 
-Ideas, not yet committed to:
+Next up:
 
+- 📋 **Go-live** — follow `docs/go-live.md`: production M-Pesa credentials, hosting, domain, Resend domain verification
+- 📋 **Artist payouts** — payout requests for collected booking deposits (mirrors organizer payouts)
 - 📋 Social sharing cards for itineraries and events
 - 📋 Organizer analytics dashboard (views, conversion, revenue trends)
 - 📋 Artist reviews and ratings
@@ -50,4 +50,4 @@ Ideas, not yet committed to:
 
 - Update this file when a milestone item ships or priorities change.
 - Record shipped changes in `CHANGELOG.md`.
-- `npm run build` and `npm run lint` must pass before every commit.
+- `npm run build`, `npm run lint`, and `npm test` must pass before every commit.
